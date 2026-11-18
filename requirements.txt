@@ -1,0 +1,3 @@
+# Aucune dépendance externe : Python 3.10+ standard library uniquement (tkinter inclus).
+# (tkinter fait partie de l'installation Python standard sur Windows/macOS ;
+#  sous Linux : paquet système python3-tk)

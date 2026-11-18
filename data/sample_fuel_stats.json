@@ -1,0 +1,27 @@
+{
+  "_comment": "ECHANTILLON DE DEMO (donnees fictives, format identique a api/api_fuel_stats.php). Remplace par la vraie reponse de l'API en production (source HTTP par defaut).",
+  "generated_at": "2026-02-10T12:00:00+01:00",
+  "units": {"fuel": "L", "distance": "NM"},
+  "prix_litre": 0.88,
+  "fleet_types": [
+    {"id": 1, "label": "Cessna 172 SP", "type": "Monomoteur", "nb_appareils": 4,
+     "nb_vols": 812, "total_nm": 96540.2, "total_fuel_l": 18450.8, "total_hours": 620.5,
+     "conso_l_per_nm": 0.1911, "conso_l_per_h": 29.75},
+    {"id": 2, "label": "PA-28 Warrior", "type": "Monomoteur", "nb_appareils": 2,
+     "nb_vols": 340, "total_nm": 41200.0, "total_fuel_l": 8650.0, "total_hours": 301.2,
+     "conso_l_per_nm": 0.2099, "conso_l_per_h": 28.71},
+    {"id": 5, "label": "DC-3", "type": "Bimoteur", "nb_appareils": 2,
+     "nb_vols": 96, "total_nm": 28800.5, "total_fuel_l": 17280.3, "total_hours": 172.4,
+     "conso_l_per_nm": 0.6, "conso_l_per_h": 100.23},
+    {"id": 9, "label": "A320neo", "type": "Liner", "nb_appareils": 3,
+     "nb_vols": 210, "total_nm": 189500.0, "total_fuel_l": 945000.0, "total_hours": 420.0,
+     "conso_l_per_nm": 4.9868, "conso_l_per_h": 2250.0},
+    {"id": 12, "label": "Planeur ASK21", "type": "Monomoteur", "nb_appareils": 1,
+     "nb_vols": 0, "total_nm": 0.0, "total_fuel_l": 0.0, "total_hours": 0.0,
+     "conso_l_per_nm": null, "conso_l_per_h": null}
+  ],
+  "global": {
+    "nb_vols": 1458, "total_nm": 355040.7, "total_fuel_l": 989381.1, "total_hours": 1514.1,
+    "conso_l_per_nm": 2.7867, "conso_l_per_h": 653.52
+  }
+}

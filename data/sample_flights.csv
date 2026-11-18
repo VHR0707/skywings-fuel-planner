@@ -1,0 +1,10 @@
+fleet_type_id,label,type,fuel_l,dist_nm,duree_s
+1,Cessna 172 SP,Monomoteur,30.2,158.4,3720
+1,Cessna 172 SP,Monomoteur,29.5,150.1,3600
+1,Cessna 172 SP,Monomoteur,31.0,162.8,3840
+1,Cessna 172 SP,Monomoteur,28.8,148.0,3540
+1,Cessna 172 SP,Monomoteur,30.5,155.2,3660
+2,PA-28 Warrior,Monomoteur,32.0,155.0,3900
+2,PA-28 Warrior,Monomoteur,30.5,148.2,3720
+5,DC-3,Bimoteur,118.0,198.5,5400
+5,DC-3,Bimoteur,122.5,205.1,5520
