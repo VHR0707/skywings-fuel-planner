@@ -14,10 +14,13 @@ Outil desktop (et CLI) qui calcule **le carburant à embarquer** pour un vol, à
 ## Formule
 
 ```
-carburant trajet = distance (NM) × conso moyenne (L/NM) du fleet_type
-réserve          = 30 min de vol × conso horaire (L/h) du fleet_type   (configurable)
-TOTAL à embarquer = trajet + réserve
+carburant trajet  = distance saisie (NM) × conso moyenne du fleet_type (L/NM)
+réserve           = 30 min de vol × conso horaire du fleet_type (L/h)   (configurable)
+TOTAL à embarquer = trajet + réserve        (aussi affiché arrondi au litre supérieur)
 ```
+
+> **Mode d'emploi complet** (lancement, publication Git sous **VHR0707**, build de l'exe,
+> dépannage) : voir [`MODE_D_EMPLOI.md`](MODE_D_EMPLOI.md).
 
 ## Lancement
 

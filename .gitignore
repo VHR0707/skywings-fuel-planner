@@ -2,7 +2,10 @@ __pycache__/
 *.py[cod]
 .venv/
 venv/
+# binaire PyInstaller (distribué via GitHub Releases, pas commité)
 dist/
+# artefacts PyInstaller
 build/
 *.egg-info/
 .pytest_cache/
+*.spec
