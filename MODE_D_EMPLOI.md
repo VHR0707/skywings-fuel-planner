@@ -33,9 +33,12 @@ SkyWingsFuelPlanner.exe --web --demo        # version web locale sur http://127.
 ```
 
 ### Version web locale (sans rien héberger sur le site)
+Le plus simple : **double-clic sur `web.bat`** (à la racine du repo) → ouvre
+http://127.0.0.1:8765 dans le navigateur. En ligne de commande :
 ```
 python -m fuelplanner --web                 # ouvre http://127.0.0.1:8765 dans le navigateur
 python -m fuelplanner --web --port 9000
+web.bat --demo                              # hors-ligne (données fictives)
 ```
 Le serveur tourne **sur ton poste uniquement** (127.0.0.1) : la page appelle des routes
 locales (`/api/fuel_stats`, `/api/compute`) et c'est le serveur Python qui fait proxy vers

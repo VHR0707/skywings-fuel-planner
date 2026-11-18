@@ -29,7 +29,8 @@ TOTAL à embarquer = trajet + réserve        (aussi affiché arrondi au litre s
 python -m fuelplanner
 
 # Version WEB locale (rien n'est hébergé sur le site : le serveur tourne sur ton poste)
-python -m fuelplanner --web                 # ouvre http://127.0.0.1:8765 dans le navigateur
+web.bat                                     # double-clic -> http://127.0.0.1:8765 (le plus simple)
+python -m fuelplanner --web                 # idem en ligne de commande
 python -m fuelplanner --web --port 9000 --demo
 
 # IHM avec un autre site / un CSV / la démo embarquée

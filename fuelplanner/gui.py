@@ -105,6 +105,8 @@ class FuelPlannerApp:
                  font=("Helvetica", 10)).grid(row=3, column=0, sticky="w", pady=4)
         self.unit_var = tk.StringVar(value=DEFAULT_UNIT)
         self._unit_labels = {code: u["label"] for code, u in UNITS.items()}
+        # la combobox affiche les labels ; on retraduit en code avant usage
+        self._unit_code_by_label = {u["label"]: code for code, u in UNITS.items()}
         self.unit_combo = ttk.Combobox(form, textvariable=self.unit_var, state="readonly",
                                        width=24, font=("Helvetica", 10),
                                        values=[self._unit_labels[c] for c in sorted(UNITS)])
@@ -199,10 +201,13 @@ class FuelPlannerApp:
                                                       else self.source_kwargs.get("base_url", DEFAULT_BASE_URL))
         self._set_status(f"Stats chargées ({len(labels)} fleet types, générées le {gen}) — source : {src}")
 
+    def _unit_code(self) -> str:
+        """Code unité ('L', 'kg', ...) à partir du label affiché dans la combobox."""
+        return self._unit_code_by_label.get(self.unit_var.get(), DEFAULT_UNIT)
+
     def _on_unit_changed(self, _event=None) -> None:
         """La densité ne sert que pour l'affichage en kg."""
-        code = self.unit_var.get()
-        is_kg = code == "kg"
+        is_kg = self._unit_code() == "kg"
         if is_kg:
             self.density_label.grid(row=4, column=0, sticky="w", pady=4)
             self.density_entry.grid(row=4, column=1, sticky="w", pady=4, padx=(8, 0))
@@ -234,7 +239,7 @@ class FuelPlannerApp:
             density = float(self.density_var.get().replace(",", "."))
         except ValueError:
             density = DEFAULT_DENSITY_KG_PER_L
-        unit = self.unit_var.get()
+        unit = self._unit_code()
 
         conso_nm, conso_h, used_global = ft["conso_l_per_nm"], ft["conso_l_per_h"], False
         if conso_nm is None or conso_nm <= 0:
