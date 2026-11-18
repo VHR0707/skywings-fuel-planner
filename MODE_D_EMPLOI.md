@@ -21,8 +21,10 @@ Litres (défaut), **kg** (densité réglable, défaut 0,72 kg/L = Avgas 100LL ; 
 **gallons US**, **gallons impériaux**. Choix dans une combobox (IHM et web) ou `--unit` (CLI).
 
 ### Avec l'exécutable (recommandé pour les pilotes)
-`dist\SkyWingsFuelPlanner.exe` — double-clic → IHM graphique (choisir le fleet type,
-saisir la distance en NM, ajuster la réserve en minutes, cliquer sur *Calculer*).
+`dist\SkyWingsFuelPlanner.exe` — double-clic → IHM graphique **sans fenêtre DOS**
+(build `--noconsole` ; la console ne se réalloue que pour `--cli` / `--web`).
+Choisir le fleet type, saisir la distance en NM, ajuster la réserve en minutes,
+cliquer sur *Calculer*.
 L'exe embarque Python + le logo + les données de démo : il interroge le site en ligne.
 
 Ligne de commande depuis l'exe :

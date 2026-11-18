@@ -3,10 +3,12 @@ REM ============================================================
 REM  Build de l'executable SkyWingsFuelPlanner.exe
 REM  Prerequis : Python 3.10+ avec pip, puis :  pip install pyinstaller
 REM  Sortie    : dist\SkyWingsFuelPlanner.exe  (onefile, logo + donnees demo embarques)
+REM  --noconsole : PAS de fenetre DOS au double-clic (IHM seule) ; la console
+REM               se realloue automatiquement en mode --cli / --web (main.py)
 REM ============================================================
 cd /d "%~dp0"
 
-python -m PyInstaller --onefile --clean --noconfirm ^
+python -m PyInstaller --onefile --clean --noconfirm --noconsole ^
     --name SkyWingsFuelPlanner ^
     --add-data "%~dp0assets;assets" ^
     --add-data "%~dp0data;data" ^
