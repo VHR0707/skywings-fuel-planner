@@ -11,5 +11,9 @@ if __name__ == "__main__":
         sys.argv.remove("--cli")
         from fuelplanner import cli
         raise SystemExit(cli.main())
+    if "--web" in sys.argv:
+        sys.argv.remove("--web")
+        from fuelplanner import web
+        raise SystemExit(web.main())
     from fuelplanner import gui
     raise SystemExit(gui.main())

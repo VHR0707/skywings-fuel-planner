@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SkyWings — Planificateur carburant</title>
+<style>
+  :root {
+    --primary: #004080;
+    --dark: #1a3552;
+    --accent: #478ED4;
+    --bg: #f7fbff;
+    --warn: #d60000;
+    --ok: #28a745;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--dark);
+    font-family: Helvetica, Arial, sans-serif;
+  }
+  header {
+    background: var(--primary); color: #fff; padding: 14px 24px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  header img { height: 56px; width: 56px; object-fit: contain; background: #fff; border-radius: 8px; padding: 4px; }
+  header h1 { font-size: 20px; margin: 0; }
+  header p { margin: 2px 0 0; color: #b3c6e0; font-size: 12px; }
+  main { max-width: 720px; margin: 24px auto; padding: 0 16px; }
+  .card {
+    background: #fff; border: 1px solid #b3c6e0; border-radius: 10px;
+    padding: 18px 20px; margin-bottom: 18px;
+  }
+  .card h2 { margin: 0 0 14px; font-size: 15px; color: var(--primary); }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; margin-bottom: 12px; }
+  label { display: block; font-size: 12px; margin-bottom: 4px; color: var(--dark); font-weight: bold; }
+  select, input {
+    font-size: 14px; padding: 7px 9px; border: 1px solid var(--accent);
+    border-radius: 6px; background: #fff; color: var(--dark); min-width: 150px;
+  }
+  input[type=number] { width: 110px; }
+  button {
+    background: var(--primary); color: #fff; border: none; border-radius: 6px;
+    font-size: 15px; font-weight: bold; padding: 10px 22px; cursor: pointer;
+  }
+  button:hover { background: var(--dark); }
+  button.secondary { background: var(--accent); font-size: 12px; padding: 7px 14px; font-weight: normal; }
+  button.secondary:hover { background: var(--primary); }
+  #result { font-family: Consolas, monospace; font-size: 14px; white-space: pre-wrap; }
+  #result .total { color: var(--primary); font-weight: bold; font-size: 16px; }
+  #result .warn { color: var(--warn); font-weight: bold; }
+  #result .ok { color: var(--ok); }
+  #status { font-size: 12px; color: var(--dark); margin-top: 8px; min-height: 16px; }
+  footer { text-align: center; color: #7a8aa0; font-size: 11px; margin: 18px 0 26px; }
+</style>
+</head>
+<body>
+<header>
+  <img src="/assets/logo.png" alt="SkyWings">
+  <div>
+    <h1>SkyWings — Planificateur carburant</h1>
+    <p>Conso moyenne issue de l'historique des vols (CARNET_DE_VOL_GENERAL) — version web locale</p>
+  </div>
+</header>
+<main>
+  <div class="card">
+    <h2>Vol à planifier</h2>
+    <div class="row">
+      <div>
+        <label for="fleet">Fleet type</label>
+        <select id="fleet" style="min-width:240px"></select>
+      </div>
+      <div>
+        <label for="nm">Distance (NM)</label>
+        <input id="nm" type="text" inputmode="decimal" placeholder="ex. 120 ou 120,5">
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label for="unit">Unité</label>
+        <select id="unit"></select>
+      </div>
+      <div id="densityBox" style="display:none">
+        <label for="density">Densité (kg/L)</label>
+        <input id="density" type="text" inputmode="decimal" style="width:90px">
+      </div>
+      <div>
+        <label for="reserve">Réserve (min)</label>
+        <input id="reserve" type="number" min="0" max="180" step="5" value="30" style="width:80px">
+      </div>
+      <div>
+        <button id="calc">Calculer</button>
+      </div>
+      <div>
+        <button id="refresh" class="secondary" title="Recharger les stats depuis le site">Rafraîchir les stats</button>
+      </div>
+    </div>
+    <div id="status">Chargement des statistiques…</div>
+  </div>
+  <div class="card">
+    <h2>Résultat</h2>
+    <div id="result">—</div>
+  </div>
+</main>
+<footer>SkyWings Fuel Planner — formule : trajet = NM × conso L/NM, réserve = 30 min × conso L/h — hébergé en local, aucune donnée envoyée.</footer>
+<script>
+const $ = (id) => document.getElementById(id);
+const status = (msg) => { $("status").textContent = msg; };
+
+async function loadUnits() {
+  const r = await fetch("/api/units");
+  const u = await r.json();
+  const sel = $("unit");
+  sel.innerHTML = "";
+  for (const unit of u.units) {
+    const o = document.createElement("option");
+    o.value = unit.code; o.textContent = unit.label;
+    if (unit.code === u.default_unit) o.selected = true;
+    sel.appendChild(o);
+  }
+  $("density").value = u.default_density_kg_per_l;
+  sel.addEventListener("change", () => {
+    $("densityBox").style.display = sel.value === "kg" ? "block" : "none";
+  });
+}
+
+async function loadStats(refresh) {
+  status("Chargement des statistiques…");
+  const r = await fetch(refresh ? "/api/fuel_stats/refresh" : "/api/fuel_stats");
+  const data = await r.json();
+  if (data.error) { status("Erreur : " + data.error); return; }
+  const sel = $("fleet");
+  sel.innerHTML = "";
+  for (const ft of data.fleet_types) {
+    const o = document.createElement("option");
+    o.value = ft.label;
+    const conso = ft.conso_l_per_nm ? ft.conso_l_per_nm.toFixed(4) + " L/NM" : "pas de données";
+    o.textContent = `${ft.label}${ft.type ? "  (" + ft.type + ")" : ""} — ${ft.nb_vols} vols, ${conso}`;
+    sel.appendChild(o);
+  }
+  status(`Stats chargées : ${data.fleet_types.length} fleet types` +
+         (data.generated_at ? ` (générées le ${data.generated_at})` : ""));
+}
+
+async function compute() {
+  const fleet = $("fleet").value;
+  const nm = $("nm").value;
+  if (!fleet) { status("Choisis un fleet type."); return; }
+  if (!nm) { status("Saisis la distance en NM."); return; }
+  const q = new URLSearchParams({
+    fleet: fleet, nm: nm,
+    reserve_min: $("reserve").value || "30",
+    unit: $("unit").value,
+    density: $("density").value || "0.72",
+  });
+  status("Calcul…");
+  const r = await fetch("/api/compute?" + q);
+  const res = await r.json();
+  if (res.error) { status("Erreur : " + res.error); return; }
+  const suf = res.unit_suffix;
+  let html = "";
+  if (res.source_fallback_global)
+    html += `<span class="warn">Repli sur la conso globale (pas de vols pour ce fleet_type).\n</span>`;
+  html += `Fleet type         : ${res.fleet_type}  (${res.nb_vols_reference} vols de référence)\n`;
+  html += `Distance           : ${res.distance_nm.toFixed(1)} NM\n`;
+  html += `Conso de référence : ${res.conso_l_per_nm.toFixed(4)} L/NM` +
+          (res.conso_per_h ? `  (${res.conso_l_per_h.toFixed(2)} L/h)` : "") + "\n";
+  html += `Carburant trajet   : ${res.trip.toFixed(2)} ${suf}` +
+          (res.unit !== "L" ? `  (${res.trip_l.toFixed(1)} L)` : "") + "\n";
+  html += `Réserve ${Math.round(res.reserve_min)} min    : ${res.reserve.toFixed(2)} ${suf}` +
+          (res.unit !== "L" ? `  (${res.reserve_l.toFixed(1)} L)` : "") + "\n";
+  html += `<span class="total">TOTAL À EMBARQUER  : ${res.total.toFixed(2)} ${suf}  (arrondi haut : ${res.total_ceil} ${suf})` +
+          (res.unit !== "L" ? `  = ${res.total_l.toFixed(1)} L` : "") + `</span>\n`;
+  if (res.cout_estime !== undefined)
+    html += `<span class="ok">Coût estimé        : ${res.cout_estime.toFixed(2)} € (${res.prix_litre} €/L)</span>`;
+  $("result").innerHTML = html;
+  status("Calcul effectué.");
+}
+
+$("calc").addEventListener("click", compute);
+$("refresh").addEventListener("click", () => loadStats(true));
+$("nm").addEventListener("keydown", (e) => { if (e.key === "Enter") compute(); });
+loadUnits().then(() => loadStats(false));
+</script>
+</body>
+</html>

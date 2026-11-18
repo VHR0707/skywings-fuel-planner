@@ -10,6 +10,7 @@ python -m PyInstaller --onefile --clean --noconfirm ^
     --name SkyWingsFuelPlanner ^
     --add-data "%~dp0assets;assets" ^
     --add-data "%~dp0data;data" ^
+    --add-data "%~dp0fuelplanner\web_static;fuelplanner\web_static" ^
     --distpath "%~dp0dist" --workpath "%~dp0build" --specpath "%~dp0build" ^
     "%~dp0main.py"
 

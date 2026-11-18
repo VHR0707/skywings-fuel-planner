@@ -16,6 +16,10 @@ Si un fleet_type n'a aucun vol en base, l'outil bascule sur la conso **globale**
 
 ## 2. Lancer l'outil
 
+### Unités d'affichage
+Litres (défaut), **kg** (densité réglable, défaut 0,72 kg/L = Avgas 100LL ; 0,80 pour du Jet A1),
+**gallons US**, **gallons impériaux**. Choix dans une combobox (IHM et web) ou `--unit` (CLI).
+
 ### Avec l'exécutable (recommandé pour les pilotes)
 `dist\SkyWingsFuelPlanner.exe` — double-clic → IHM graphique (choisir le fleet type,
 saisir la distance en NM, ajuster la réserve en minutes, cliquer sur *Calculer*).
@@ -24,19 +28,32 @@ L'exe embarque Python + le logo + les données de démo : il interroge le site e
 Ligne de commande depuis l'exe :
 ```
 SkyWingsFuelPlanner.exe --cli --list
-SkyWingsFuelPlanner.exe --cli --fleet "C172" --nm 150
+SkyWingsFuelPlanner.exe --cli --fleet "C172" --nm 150 --unit gal_us
+SkyWingsFuelPlanner.exe --web --demo        # version web locale sur http://127.0.0.1:8765
 ```
+
+### Version web locale (sans rien héberger sur le site)
+```
+python -m fuelplanner --web                 # ouvre http://127.0.0.1:8765 dans le navigateur
+python -m fuelplanner --web --port 9000
+```
+Le serveur tourne **sur ton poste uniquement** (127.0.0.1) : la page appelle des routes
+locales (`/api/fuel_stats`, `/api/compute`) et c'est le serveur Python qui fait proxy vers
+`https://www.skywings.ovh/api/api_fuel_stats.php`. Aucune donnée n'est envoyée ailleurs.
+Astuce : `--demo` ou `--csv` pour tester sans accès au site.
 
 ### Depuis les sources (développeur)
 Prérequis : Python 3.10+ (3.11 installé ici), aucune dépendance (`requirements.txt` est vide).
 ```
 cd F:\GitHub\skywings-fuel-planner
 python -m fuelplanner                                   # IHM
+python -m fuelplanner --web                             # web local
 python -m fuelplanner --demo                            # IHM hors-ligne (données fictives)
 python -m fuelplanner --cli --list                      # liste les fleet_types (site réel)
 python -m fuelplanner --cli --fleet "C172" --nm 150    # calcul
+python -m fuelplanner --cli --fleet "C172" --nm 150 --unit kg --density 0.8
 python -m fuelplanner --cli --fleet "C172" --nm 150 --json
-python -m unittest discover -s tests -v                 # 32 tests
+python -m unittest discover -s tests -v                 # tests (55)
 ```
 
 ## 3. Publier sur Git sous VHR0707 (pas Skall34)
@@ -64,11 +81,28 @@ git push -u origin main
 > Le `push` publie le code : c'est l'action à valider explicitement. Ne jamais faire
 > `git push --force` sur `main`.
 
+### 3.2 bis — Publier avec GitHub Desktop (ta méthode habituelle)
+1. Ouvre **GitHub Desktop** → *File → Options → Accounts* → *Sign in* avec le compte
+   **VHR0707** (github.com).
+2. *File → Add local repository…* → `F:\GitHub\skywings-fuel-planner` → *Add Repository*.
+3. Le dépôt a déjà un remote `origin` (posé en ligne de commande). Deux façons de créer
+   le dépôt sur GitHub :
+   - **100 % Desktop** : *Repository → Repository settings → Remote* → retire l'URL
+     (bouton −) → OK. Le bouton **Publish repository** réapparaît en haut de la fenêtre :
+     choisis le compte **VHR0707**, le nom `skywings-fuel-planner`, coche **Public**,
+     clique **Publish Repository** → le dépôt est créé sur GitHub ET poussé d'un coup.
+   - **Dépôt créé d'abord sur le web** (github.com/new en étant connecté VHR0707, nom
+     `skywings-fuel-planner`, Public, rien d'autre) : reviens dans Desktop, fais
+     *Fetch origin* (bouton en haut), puis **Push origin** (Ctrl+P).
+4. Au quotidien dans Desktop : les fichiers modifiés apparaissent à gauche → remplis
+   *Summary* (+ *Description*) → **Commit to main** → **Push origin** (Ctrl+P).
+   Les commits seront signés **VHR0707** (identité globale de la machine).
+
 ### 3.3 Au quotidien
 ```
 git status                          # voir ce qui a changé
 git add -A                          # tout ajouter
-git commit -m " ungaea message court"   # commit signé VHR0707 automatiquement
+git commit -m "un message court"        # commit signé VHR0707 automatiquement
 git push                            # publier sur GitHub (VHR0707/skywings-fuel-planner)
 git pull                            # récupérer les modifs des autres
 ```

@@ -9,6 +9,8 @@ from typing import Optional
 
 from .calc import fuel_needed
 from .sources import DEFAULT_BASE_URL, SourceError, make_source
+from .units import (DEFAULT_DENSITY_KG_PER_L, DEFAULT_UNIT, UNITS, convert_result,
+                    unit_suffix)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -30,6 +32,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--nm", type=float, help="Distance du vol en NM (requis sans --list)")
     p.add_argument("--reserve-min", type=float, default=30.0,
                    help="Réserve en minutes de vol (défaut : 30)")
+    p.add_argument("--unit", default=DEFAULT_UNIT, choices=sorted(UNITS),
+                   help="Unité d'affichage du carburant (défaut : L)")
+    p.add_argument("--density", type=float, default=DEFAULT_DENSITY_KG_PER_L,
+                   help="Densité kg/L pour la conversion en kg (défaut : 0.72, Avgas 100LL)")
     p.add_argument("--json", action="store_true", help="Sortie JSON brute")
     return p
 
@@ -92,6 +98,7 @@ def main(argv=None) -> int:
 
     try:
         res = fuel_needed(args.nm, conso_nm, conso_h, reserve_min=args.reserve_min)
+        res = convert_result(res, unit=args.unit, density=args.density)
     except ValueError as e:
         print(f"ERREUR : {e}", file=sys.stderr)
         return 2
@@ -103,17 +110,26 @@ def main(argv=None) -> int:
     if args.json:
         print(json.dumps(res, ensure_ascii=False, indent=2))
     else:
+        suf = unit_suffix(args.unit)
         print(f"Fleet type         : {res['fleet_type']}"
               f" ({res['nb_vols_reference']} vols de référence"
               f"{' — repli sur la conso globale' if used_global else ''})")
         print(f"Distance           : {res['distance_nm']:.1f} NM")
         line = f"Conso de référence : {res['conso_l_per_nm']:.4f} L/NM"
+        if res.get("conso_per_nm") and args.unit != "L":
+            line += f"  ({res['conso_per_nm']:.4f} {suf}/NM)"
         if res["conso_l_per_h"]:
-            line += f"  ({res['conso_l_per_h']:.2f} L/h)"
+            line += f"  ({res['conso_l_per_h']:.2f} L/h"
+            if res.get("conso_per_h") and args.unit != "L":
+                line += f" — {res['conso_per_h']:.2f} {suf}/h"
+            line += ")"
         print(line)
-        print(f"Carburant trajet   : {res['trip_l']:.1f} L")
-        print(f"Réserve {res['reserve_min']:.0f} min    : {res['reserve_l']:.1f} L")
-        print(f"TOTAL À EMBARQUER  : {res['total_l']:.1f} L  (arrondi haut : {res['total_l_ceil']} L)")
+        print(f"Carburant trajet   : {res['trip']:.2f} {suf}"
+              + (f"  ({res['trip_l']:.1f} L)" if args.unit != "L" else ""))
+        print(f"Réserve {res['reserve_min']:.0f} min    : {res['reserve']:.2f} {suf}"
+              + (f"  ({res['reserve_l']:.1f} L)" if args.unit != "L" else ""))
+        print(f"TOTAL À EMBARQUER  : {res['total']:.2f} {suf}  (arrondi haut : {res['total_ceil']} {suf})"
+              + (f"  = {res['total_l']:.1f} L" if args.unit != "L" else ""))
         if stats.get("prix_litre"):
             print(f"Coût estimé        : {res['total_l'] * stats['prix_litre']:.2f} € "
                   f"({stats['prix_litre']} €/L)")

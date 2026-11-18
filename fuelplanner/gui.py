@@ -12,6 +12,8 @@ from tkinter import ttk
 from .calc import fuel_needed
 from .cli import find_fleet
 from .sources import DEFAULT_BASE_URL, SourceError, make_source
+from .units import (DEFAULT_DENSITY_KG_PER_L, DEFAULT_UNIT, UNITS, convert_result,
+                    unit_suffix)
 
 # Palette SkyWings (simweb/css) + logo de la compagnie
 COLOR_BG = "#f7fbff"
@@ -99,6 +101,24 @@ class FuelPlannerApp:
         tk.Spinbox(form, from_=0, to=180, increment=5, textvariable=self.reserve_var,
                    width=6, font=("Helvetica", 10)).grid(row=2, column=1, sticky="w", pady=4, padx=(8, 0))
 
+        tk.Label(form, text="Unité d'affichage :", bg=COLOR_BG, fg=COLOR_DARK,
+                 font=("Helvetica", 10)).grid(row=3, column=0, sticky="w", pady=4)
+        self.unit_var = tk.StringVar(value=DEFAULT_UNIT)
+        self._unit_labels = {code: u["label"] for code, u in UNITS.items()}
+        self.unit_combo = ttk.Combobox(form, textvariable=self.unit_var, state="readonly",
+                                       width=24, font=("Helvetica", 10),
+                                       values=[self._unit_labels[c] for c in sorted(UNITS)])
+        self.unit_combo.grid(row=3, column=1, sticky="w", pady=4, padx=(8, 0))
+        self.unit_combo.current(sorted(UNITS).index(DEFAULT_UNIT))
+        self.unit_combo.bind("<<ComboboxSelected>>", self._on_unit_changed)
+
+        self.density_label = tk.Label(form, text="Densité (kg/L) :", bg=COLOR_BG, fg=COLOR_DARK,
+                                      font=("Helvetica", 10))
+        self.density_var = tk.StringVar(value=str(DEFAULT_DENSITY_KG_PER_L))
+        self.density_entry = tk.Entry(form, textvariable=self.density_var, width=8,
+                                      font=("Helvetica", 10))
+        self._on_unit_changed()  # affiche/masque la densité selon l'unité
+
         form.columnconfigure(1, weight=1)
 
         buttons = tk.Frame(self.root, bg=COLOR_BG)
@@ -179,6 +199,17 @@ class FuelPlannerApp:
                                                       else self.source_kwargs.get("base_url", DEFAULT_BASE_URL))
         self._set_status(f"Stats chargées ({len(labels)} fleet types, générées le {gen}) — source : {src}")
 
+    def _on_unit_changed(self, _event=None) -> None:
+        """La densité ne sert que pour l'affichage en kg."""
+        code = self.unit_var.get()
+        is_kg = code == "kg"
+        if is_kg:
+            self.density_label.grid(row=4, column=0, sticky="w", pady=4)
+            self.density_entry.grid(row=4, column=1, sticky="w", pady=4, padx=(8, 0))
+        else:
+            self.density_label.grid_remove()
+            self.density_entry.grid_remove()
+
     # ---------- calcul ----------
 
     def on_calculate(self) -> None:
@@ -199,6 +230,11 @@ class FuelPlannerApp:
             reserve_min = float(self.reserve_var.get())
         except ValueError:
             reserve_min = DEFAULT_RESERVE_MIN
+        try:
+            density = float(self.density_var.get().replace(",", "."))
+        except ValueError:
+            density = DEFAULT_DENSITY_KG_PER_L
+        unit = self.unit_var.get()
 
         conso_nm, conso_h, used_global = ft["conso_l_per_nm"], ft["conso_l_per_h"], False
         if conso_nm is None or conso_nm <= 0:
@@ -211,27 +247,34 @@ class FuelPlannerApp:
 
         try:
             res = fuel_needed(nm, conso_nm, conso_h, reserve_min=reserve_min)
+            res = convert_result(res, unit=unit, density=density)
         except ValueError as e:
             self._set_status(str(e))
             return
 
         nb_vols = self.stats["global"]["nb_vols"] if used_global else ft["nb_vols"]
+        suf = unit_suffix(unit)
         lines = []
         if used_global:
             lines.append(("Repli sur la conso globale (pas de vols pour ce fleet_type).\n", "warn"))
+        conso_line = f"Conso de référence : {res['conso_l_per_nm']:.4f} L/NM"
+        if res.get("conso_per_nm") and unit != "L":
+            conso_line += f"  ({res['conso_per_nm']:.4f} {suf}/NM)"
+        if res.get("conso_l_per_h"):
+            conso_line += f"  ({res['conso_l_per_h']:.2f} L/h"
+            if res.get("conso_per_h") and unit != "L":
+                conso_line += f" — {res['conso_per_h']:.2f} {suf}/h"
+            conso_line += ")"
         lines += [
             (f"Fleet type         : {ft['label']}  ({nb_vols} vols de référence)\n", None),
             (f"Distance           : {res['distance_nm']:.1f} NM\n", None),
-            (f"Conso de référence : {res['conso_l_per_nm']:.4f} L/NM", None),
-        ]
-        if res["conso_l_per_h"]:
-            lines.append((f"  ({res['conso_l_per_h']:.2f} L/h)\n", None))
-        else:
-            lines.append(("\n", None))
-        lines += [
-            (f"Carburant trajet   : {res['trip_l']:.1f} L\n", None),
-            (f"Réserve {res['reserve_min']:.0f} min    : {res['reserve_l']:.1f} L\n", None),
-            (f"TOTAL À EMBARQUER  : {res['total_l']:.1f} L  (arrondi haut : {res['total_l_ceil']} L)\n", "total"),
+            (conso_line + "\n", None),
+            (f"Carburant trajet   : {res['trip']:.2f} {suf}"
+             + (f"  ({res['trip_l']:.1f} L)" if unit != "L" else "") + "\n", None),
+            (f"Réserve {res['reserve_min']:.0f} min    : {res['reserve']:.2f} {suf}"
+             + (f"  ({res['reserve_l']:.1f} L)" if unit != "L" else "") + "\n", None),
+            (f"TOTAL À EMBARQUER  : {res['total']:.2f} {suf}  (arrondi haut : {res['total_ceil']} {suf})"
+             + (f"  = {res['total_l']:.1f} L" if unit != "L" else "") + "\n", "total"),
         ]
         if self.stats.get("prix_litre"):
             lines.append((f"Coût estimé        : {res['total_l'] * self.stats['prix_litre']:.2f} € "

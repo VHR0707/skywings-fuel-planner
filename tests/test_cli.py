@@ -27,7 +27,7 @@ class TestCliDemo(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertIn("TOTAL À EMBARQUER", out)
         # 100 NM x 0.1911 L/NM = 19.11 L + 30 min x 29.75 L/h = 14.875 L -> 34.0 L
-        self.assertIn("34.0 L", out)
+        self.assertIn("34.00 L", out)
 
     def test_calculate_json(self):
         code, out, _ = self._run(["--demo", "--fleet", "Cessna 172 SP", "--nm", "100", "--json"])

@@ -28,6 +28,10 @@ TOTAL à embarquer = trajet + réserve        (aussi affiché arrondi au litre s
 # IHM graphique (interroge le site par défaut)
 python -m fuelplanner
 
+# Version WEB locale (rien n'est hébergé sur le site : le serveur tourne sur ton poste)
+python -m fuelplanner --web                 # ouvre http://127.0.0.1:8765 dans le navigateur
+python -m fuelplanner --web --port 9000 --demo
+
 # IHM avec un autre site / un CSV / la démo embarquée
 python -m fuelplanner --demo
 python -m fuelplanner --csv data/sample_flights.csv
@@ -36,12 +40,17 @@ python -m fuelplanner --base-url http://localhost
 # CLI
 python -m fuelplanner --cli --demo --list                          # liste les fleet_types et leurs consos
 python -m fuelplanner --cli --fleet "Cessna 172 SP" --nm 120       # calcul (site réel)
+python -m fuelplanner --cli --fleet "C172" --nm 150 --unit gal_us  # en gallons US
+python -m fuelplanner --cli --fleet "A-320neo" --nm 800 --unit kg --density 0.8   # en kg (Jet A1)
 python -m fuelplanner --cli --demo --fleet "Cessna 172 SP" --nm 120 --json
 python -m fuelplanner --cli --demo --fleet "Cessna 172 SP" --nm 120 --reserve-min 45
 ```
 
 Dans l'IHM : choisir le **fleet type** dans la liste déroulante, saisir la **distance en NM**
-(`120` ou `120,5`), ajuster la **réserve en minutes**, cliquer sur **Calculer le carburant**.
+(`120` ou `120,5`), ajuster la **réserve en minutes**, choisir l'**unité** (L / kg / gal US /
+gal imp — la densité kg/L n'apparaît qu'en kg, défaut 0,72 = Avgas 100LL), cliquer sur
+**Calculer le carburant**. Le résultat s'affiche dans l'unité choisie, avec les litres entre
+parenthèses.
 
 ## Tests
 
@@ -50,7 +59,8 @@ python -m unittest discover -s tests -v
 ```
 
 Couvre : haversine (valeurs de référence), agrégation + trim IQR, formule du carburant,
-sources CSV/HTTP (mocké)/échantillon, CLI en mode démo. Aucun accès réseau requis.
+conversions d'unités, sources CSV/HTTP (mocké)/échantillon, CLI en mode démo, **routes du
+serveur web local** (serveur réel sur port éphémère, source démo). Aucun accès réseau requis.
 
 ## Contrat de l'API (api/api_fuel_stats.php côté simweb)
 
@@ -81,11 +91,14 @@ côté client, un simple GET HTTPS suffit.
 skywings-fuel-planner/
 ├── fuelplanner/
 │   ├── __init__.py
-│   ├── __main__.py      # python -m fuelplanner (IHM) / --cli (CLI)
+│   ├── __main__.py      # python -m fuelplanner (IHM) / --cli (CLI) / --web (web local)
 │   ├── calc.py          # calculs purs : haversine, agrégation, fuel_needed
 │   ├── sources.py       # HttpSource (API), CsvSource (hors-ligne), SampleSource (démo)
+│   ├── units.py         # conversions L / kg / gal US / gal imp (densité 0,72 kg/L par défaut)
 │   ├── cli.py           # interface ligne de commande
-│   └── gui.py           # IHM tkinter aux couleurs SkyWings
+│   ├── gui.py           # IHM tkinter aux couleurs SkyWings
+│   ├── web.py           # serveur web local (http.server, proxy /api/fuel_stats, /api/compute)
+│   └── web_static/index.html  # page web (couleurs + logo SkyWings)
 ├── assets/logo.png      # logo SkyWings (copié depuis simweb/assets/images)
 ├── data/
 │   ├── sample_fuel_stats.json   # échantillon format API (démo/tests)
