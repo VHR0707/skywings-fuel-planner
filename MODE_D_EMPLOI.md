@@ -64,22 +64,31 @@ python -m unittest discover -s tests -v                 # tests (55)
 L'identité Git globale de la machine est déjà `VHR0707 <vhr0707@gmail.com>`
 (`git config --global user.name` / `user.email`) — les commits partiront donc sous VHR0707.
 
-### 3.1 Une fois : créer le dépôt vide sur GitHub (compte VHR0707)
-Option A — en ligne de commande (GitHub CLI) :
-```
-gh auth login                        # se connecter avec le compte VHR0707
+### 3.1 Une fois : créer le dépôt sur GitHub (compte VHR0707) — FAIT en CLI
+La machine a déjà un credential GitHub enregistré pour **VHR0707** (Git Credential Manager).
+Méthode utilisée (sans rien installer) :
+```bash
+# 1. récupérer le token stocké (ne jamais l'afficher)
+TOKEN=$(printf "protocol=https\nhost=github.com\n" | git credential fill | sed -n 's/^password=//p')
+# 2. créer le dépôt public sous VHR0707
+curl -s -X POST https://api.github.com/user/repos \
+     -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" \
+     -d '{"name":"skywings-fuel-planner","public":true}'
+# 3. pousser
 cd F:\GitHub\skywings-fuel-planner
-gh repo create VHR0707/skywings-fuel-planner --public --source . --push
-```
-Option B — via le navigateur : connecté sur github.com en tant que **VHR0707**,
-*New repository* → nom `skywings-fuel-planner`, **Public**, ne rien cocher d'autre
-(pas de README/licence/gitignore automatiques), *Create repository*.
-
-### 3.2 Une fois : brancher le remote local
-```
-cd F:\GitHub\skywings-fuel-planner
-git remote add origin https://github.com/VHR0707/skywings-fuel-planner.git   # déjà fait ici
 git push -u origin main
+```
+Autres options : `gh auth login` puis `gh repo create VHR0707/skywings-fuel-planner --public --source . --push`,
+ou github.com/new (connecté en VHR0707) → `skywings-fuel-planner`, Public, sans README.
+
+> ✅ Le dépôt existe déjà : https://github.com/VHR0707/skywings-fuel-planner (public, main poussé).
+> Dans GitHub Desktop, maintenant que le dépôt existe côté GitHub, le simple
+> **Push origin** (Ctrl+P) fonctionnera — plus besoin de toucher au remote.
+
+### 3.2 Remote local
+```
+cd F:\GitHub\skywings-fuel-planner
+git remote add origin https://github.com/VHR0707/skywings-fuel-planner.git   # déjà fait
 ```
 > Le `push` publie le code : c'est l'action à valider explicitement. Ne jamais faire
 > `git push --force` sur `main`.
